@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@atproto/api": "^0.13.18",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
     "rss-parser": "^3.12.0"
   }
 }
