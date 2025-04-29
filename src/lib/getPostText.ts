@@ -1,4 +1,8 @@
-export default async function getPostText() {
-  // Generate the text for your post here. You can return a string or a promise that resolves to a string
-  return "Hello from the Bluesky API";
+import Parser from "rss-parser";
+
+const parser = new Parser();
+
+export default async function getPostText(): Promise<string> {
+  const feed = await parser.parseURL("https://nitter.net/LFC_pl/rss");
+  return feed.items?.[0]?.title ?? "Brak nowych tweetów";
 }
