@@ -1,17 +1,18 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
+
+const LAST_TWEET_FILE = ".lastTweet";
+const MAX_TWEETS_TO_CHECK = 10;
 
 export default async function getPostText(): Promise<string | null> {
   const username = "LFC_pl";
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
-  const maxTweetsToCheck = 10;
-  const lastTweetFile = path.resolve(".lastTweet");
 
   if (!bearerToken) {
     throw new Error("Brak tokena dostępu do Twitter API (TWITTER_BEARER_TOKEN).");
   }
 
-  // Pobierz ID użytkownika na podstawie nazwy
+  // Krok 1: Pobierz ID użytkownika
   const userResp = await fetch(`https://api.twitter.com/2/users/by/username/${username}`, {
     headers: { Authorization: `Bearer ${bearerToken}` },
   });
@@ -27,10 +28,13 @@ export default async function getPostText(): Promise<string | null> {
     throw new Error("Nie znaleziono ID użytkownika Twittera.");
   }
 
-  // Pobierz najnowsze tweety użytkownika
-  const tweetsResp = await fetch(`https://api.twitter.com/2/users/${userId}/tweets?max_results=${maxTweetsToCheck}&tweet.fields=referenced_tweets`, {
-    headers: { Authorization: `Bearer ${bearerToken}` },
-  });
+  // Krok 2: Pobierz najnowsze tweety
+  const tweetsResp = await fetch(
+    `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text`,
+    {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    }
+  );
 
   if (!tweetsResp.ok) {
     throw new Error(`Błąd przy pobieraniu tweetów: ${tweetsResp.statusText}`);
@@ -44,44 +48,41 @@ export default async function getPostText(): Promise<string | null> {
     return null;
   }
 
-  // Odczytaj ostatnio opublikowany tweet (jeśli istnieje)
+  // Krok 3: Odczytaj ID ostatniego opublikowanego tweeta
   let lastPostedId: string | null = null;
-  if (fs.existsSync(lastTweetFile)) {
-    lastPostedId = fs.readFileSync(lastTweetFile, "utf-8").trim();
+  try {
+    const savedId = await fs.readFile(path.resolve(LAST_TWEET_FILE), "utf8");
+    lastPostedId = savedId.trim();
+  } catch {
+    // plik może nie istnieć przy pierwszym uruchomieniu — to OK
   }
 
-  for (const tweet of tweets) {
-    const text = tweet.text;
-    const tweetId = tweet.id;
+  // Krok 4: Filtruj i znajdź pierwszy pasujący tweet
+  const suitableTweet = tweets.find((tweet: any) => {
+    const text: string = tweet.text;
+    const id: string = tweet.id;
 
-    // Pomijamy jeśli już został opublikowany
-    if (tweetId === lastPostedId) {
-      console.log("Tweet już opublikowany, pomijam:", tweetId);
-      continue;
+    if (id === lastPostedId) return false;                // już opublikowany
+    if (text.startsWith("RT")) return false;              // retweet
+    if (text.trim().startsWith("@")) return false;        // odpowiedź
+
+    const urls = text.match(/https?:\/\/\S+/g);
+    if (urls && urls.some(url =>
+      url.includes("twitter.com") || url.includes("x.com") || url.includes("t.co")
+    )) {
+      return false; // zawiera link do X
     }
 
-    // Pomijamy odpowiedzi i retweety
-    const isReplyOrRetweet = tweet.referenced_tweets?.some((ref: any) =>
-      ["replied_to", "retweeted"].includes(ref.type)
-    );
-    if (isReplyOrRetweet) {
-      console.log("Pomijam odpowiedź lub retweet:", tweetId);
-      continue;
-    }
+    return true;
+  });
 
-    // Pomijamy tweety zawierające linki do Twittera/X
-    const urls = text.match(/https?:\/\/[^
-\s]+/g);
-    if (urls && urls.some((url: string) => url.includes("twitter.com") || url.includes("x.com") || url.includes("t.co"))) {
-      console.log("Tweet zawiera link do Twittera/X, pomijam:", tweetId);
-      continue;
-    }
-
-    // Zapisz ID tego tweeta jako ostatnio opublikowanego
-    fs.writeFileSync(lastTweetFile, tweetId);
-    return text;
+  if (!suitableTweet) {
+    console.log("Brak tweetów spełniających kryteria.");
+    return null;
   }
 
-  console.log("Nie znaleziono odpowiedniego tweeta do opublikowania.");
-  return null;
+  // Krok 5: Zapisz ID tweeta, który zaraz opublikujemy
+  await fs.writeFile(path.resolve(LAST_TWEET_FILE), suitableTweet.id, "utf8");
+
+  return suitableTweet.text;
 }
