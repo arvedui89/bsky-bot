@@ -9,5 +9,13 @@ console.log("Starting bot…");
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 
-const text = await Bot.run(getPostText, { dryRun: false });
+const text = await getPostText();
+
+if (!text) {
+  console.log("Brak tekstu do opublikowania. Przerywam.");
+  return;
+}
+
+await Bot.run(() => Promise.resolve(text), { dryRun: false });
+
 console.log(`[${new Date().toISOString()}] Posted: "${text}"`);
