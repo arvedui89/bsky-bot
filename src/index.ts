@@ -9,7 +9,6 @@ async function main() {
       return;
     }
 
-    const url = await postToBluesky(text);
     console.log(`✅ Opublikowano: ${url}`);
   } catch (error) {
     console.error("❌ Błąd w działaniu bota:", error);
