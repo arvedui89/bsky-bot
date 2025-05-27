@@ -4,7 +4,7 @@ dotenv.config();
 console.log('Loaded ENV:');
 console.log('BSKY_HANDLE:', process.env.BSKY_HANDLE);
 console.log('BSKY_PASSWORD:', process.env.BSKY_PASSWORD);
-console.log('FEED_URL:', process.env.FEED_URL);
+console.log("Starting bot…");
 
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
