@@ -1,15 +1,19 @@
+import fs from "fs";
+import path from "path";
+
 export default async function getPostText(): Promise<string | null> {
   const username = "LFC_pl";
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
+  const maxTweetsToCheck = 10;
+  const lastTweetFile = path.resolve(".lastTweet");
 
   if (!bearerToken) {
     throw new Error("Brak tokena dostępu do Twitter API (TWITTER_BEARER_TOKEN).");
   }
 
+  // Pobierz ID użytkownika na podstawie nazwy
   const userResp = await fetch(`https://api.twitter.com/2/users/by/username/${username}`, {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
+    headers: { Authorization: `Bearer ${bearerToken}` },
   });
 
   if (!userResp.ok) {
@@ -23,10 +27,9 @@ export default async function getPostText(): Promise<string | null> {
     throw new Error("Nie znaleziono ID użytkownika Twittera.");
   }
 
-  const tweetsResp = await fetch(`https://api.twitter.com/2/users/${userId}/tweets`, {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
+  // Pobierz najnowsze tweety użytkownika
+  const tweetsResp = await fetch(`https://api.twitter.com/2/users/${userId}/tweets?max_results=${maxTweetsToCheck}&tweet.fields=referenced_tweets`, {
+    headers: { Authorization: `Bearer ${bearerToken}` },
   });
 
   if (!tweetsResp.ok) {
@@ -37,38 +40,48 @@ export default async function getPostText(): Promise<string | null> {
   const tweets = tweetsData.data;
 
   if (!tweets || tweets.length === 0) {
-    throw new Error("Nie znaleziono żadnych tweetów.");
-  }
-
-  // Znajdź pierwszy tweet, który NIE zawiera linków do Twittera/X
-  const cleanTweets = tweets.filter((tweet: any) => {
-  const text = tweet.text.trim();
-
-  // Pomijaj odpowiedzi i retweety
-  if (text.startsWith("@") || text.startsWith("RT ")) return false;
-
-  const urls = text.match(/https?:\/\/[^\s]+/g);
-
-  // Jeśli nie ma linków, tweet jest OK
-  if (!urls) return true;
-
-  // Tweet jest OK tylko jeśli nie zawiera linków do Twittera/X
-  return !urls.some((url: string) =>
-    url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
-  );
-});
-
-if (cleanTweets.length === 0) {
-  console.log("Brak odpowiednich tweetów do opublikowania. Przerywam.");
-  return null;
-}
-
-const cleanTweet = cleanTweets[0];
-
-  if (!cleanTweet) {
-    console.log("Brak tweetów bez linków do Twittera/X. Przerywam.");
+    console.log("Brak tweetów.");
     return null;
   }
 
-  return cleanTweet.text;
+  // Odczytaj ostatnio opublikowany tweet (jeśli istnieje)
+  let lastPostedId: string | null = null;
+  if (fs.existsSync(lastTweetFile)) {
+    lastPostedId = fs.readFileSync(lastTweetFile, "utf-8").trim();
+  }
+
+  for (const tweet of tweets) {
+    const text = tweet.text;
+    const tweetId = tweet.id;
+
+    // Pomijamy jeśli już został opublikowany
+    if (tweetId === lastPostedId) {
+      console.log("Tweet już opublikowany, pomijam:", tweetId);
+      continue;
+    }
+
+    // Pomijamy odpowiedzi i retweety
+    const isReplyOrRetweet = tweet.referenced_tweets?.some((ref: any) =>
+      ["replied_to", "retweeted"].includes(ref.type)
+    );
+    if (isReplyOrRetweet) {
+      console.log("Pomijam odpowiedź lub retweet:", tweetId);
+      continue;
+    }
+
+    // Pomijamy tweety zawierające linki do Twittera/X
+    const urls = text.match(/https?:\/\/[^
+\s]+/g);
+    if (urls && urls.some((url: string) => url.includes("twitter.com") || url.includes("x.com") || url.includes("t.co"))) {
+      console.log("Tweet zawiera link do Twittera/X, pomijam:", tweetId);
+      continue;
+    }
+
+    // Zapisz ID tego tweeta jako ostatnio opublikowanego
+    fs.writeFileSync(lastTweetFile, tweetId);
+    return text;
+  }
+
+  console.log("Nie znaleziono odpowiedniego tweeta do opublikowania.");
+  return null;
 }
