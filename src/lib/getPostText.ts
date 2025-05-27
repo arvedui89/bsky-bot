@@ -44,8 +44,8 @@ export default async function getPostText(): Promise<string | null> {
   const cleanTweet = tweets.find((tweet: any) => {
   const text = tweet.text.trim();
 
-  // Pomijaj odpowiedzi
-  if (text.startsWith("@")) return false;
+  // Pomijaj odpowiedzi i retweety
+  if (text.startsWith("@") || text.startsWith("RT ")) return false;
 
   const urls = text.match(/https?:\/\/[^\s]+/g);
 
@@ -57,6 +57,7 @@ export default async function getPostText(): Promise<string | null> {
     url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
   );
 });
+
 
   if (!cleanTweet) {
     console.log("Brak tweetów bez linków do Twittera/X. Przerywam.");
