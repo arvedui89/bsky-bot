@@ -6,8 +6,8 @@ console.log('BSKY_HANDLE:', process.env.BSKY_HANDLE);
 console.log('BSKY_PASSWORD:', process.env.BSKY_PASSWORD);
 console.log("Starting bot…");
 
-import Bot from "./lib/bot";
-import getPostText from "./lib/getPostText";
+import Bot from "./lib/bot.js";
+import getPostText from "./lib/getPostText.js";
 
 (async () => {
   const text = await getPostText();
