@@ -41,7 +41,7 @@ export default async function getPostText(): Promise<string | null> {
   }
 
   // Znajdź pierwszy tweet, który NIE zawiera linków do Twittera/X
-  const cleanTweet = tweets.find((tweet: any) => {
+  const cleanTweets = tweets.filter((tweet: any) => {
   const text = tweet.text.trim();
 
   // Pomijaj odpowiedzi i retweety
@@ -52,12 +52,18 @@ export default async function getPostText(): Promise<string | null> {
   // Jeśli nie ma linków, tweet jest OK
   if (!urls) return true;
 
-  // Sprawdź, czy żadna z domen nie wskazuje na Twittera/X
+  // Tweet jest OK tylko jeśli nie zawiera linków do Twittera/X
   return !urls.some((url: string) =>
     url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
   );
 });
 
+if (cleanTweets.length === 0) {
+  console.log("Brak odpowiednich tweetów do opublikowania. Przerywam.");
+  return null;
+}
+
+const cleanTweet = cleanTweets[0];
 
   if (!cleanTweet) {
     console.log("Brak tweetów bez linków do Twittera/X. Przerywam.");
