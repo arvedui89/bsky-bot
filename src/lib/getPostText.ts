@@ -1,5 +1,5 @@
-export default async function getPostText(): Promise<string> {
-  const username = "LFC_pl"; // zamień na swoją nazwę, jeśli inna
+export default async function getPostText(): Promise<string | null> {
+  const username = "LFC_pl";
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
   if (!bearerToken) {
@@ -34,11 +34,29 @@ export default async function getPostText(): Promise<string> {
   }
 
   const tweetsData = await tweetsResp.json();
-  const latestTweet = tweetsData.data?.[0]?.text;
+  const tweets = tweetsData.data;
 
-  if (!latestTweet) {
-    throw new Error("Nie znaleziono żadnych tweetów do opublikowania.");
+  if (!tweets || tweets.length === 0) {
+    throw new Error("Nie znaleziono żadnych tweetów.");
   }
 
-  return latestTweet;
+  // Znajdź pierwszy tweet, który NIE zawiera linków do Twittera/X
+  const cleanTweet = tweets.find((tweet: any) => {
+    const text = tweet.text;
+    const urls = text.match(/https?:\/\/[^\s]+/g);
+
+    if (!urls) return true;
+
+    // Sprawdź, czy żadna z domen nie wskazuje na Twittera/X
+    return !urls.some(url =>
+      url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
+    );
+  });
+
+  if (!cleanTweet) {
+    console.log("Brak tweetów bez linków do Twittera/X. Przerywam.");
+    return null;
+  }
+
+  return cleanTweet.text;
 }
