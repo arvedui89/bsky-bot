@@ -48,9 +48,9 @@ export default async function getPostText(): Promise<string | null> {
     if (!urls) return true;
 
     // Sprawdź, czy żadna z domen nie wskazuje na Twittera/X
-    return !urls.some(url =>
-      url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
-    );
+    return !urls.some((url: string) =>
+  url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
+);
   });
 
   if (!cleanTweet) {
