@@ -42,16 +42,21 @@ export default async function getPostText(): Promise<string | null> {
 
   // Znajdź pierwszy tweet, który NIE zawiera linków do Twittera/X
   const cleanTweet = tweets.find((tweet: any) => {
-    const text = tweet.text;
-    const urls = text.match(/https?:\/\/[^\s]+/g);
+  const text = tweet.text.trim();
 
-    if (!urls) return true;
+  // Pomijaj odpowiedzi
+  if (text.startsWith("@")) return false;
 
-    // Sprawdź, czy żadna z domen nie wskazuje na Twittera/X
-    return !urls.some((url: string) =>
-  url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
-);
-  });
+  const urls = text.match(/https?:\/\/[^\s]+/g);
+
+  // Jeśli nie ma linków, tweet jest OK
+  if (!urls) return true;
+
+  // Sprawdź, czy żadna z domen nie wskazuje na Twittera/X
+  return !urls.some((url: string) =>
+    url.includes("t.co") || url.includes("x.com") || url.includes("twitter.com")
+  );
+});
 
   if (!cleanTweet) {
     console.log("Brak tweetów bez linków do Twittera/X. Przerywam.");
