@@ -82,7 +82,15 @@ export default async function getPostText(): Promise<string | null> {
   }
 
   // Krok 5: Zapisz ID tweeta, który zaraz opublikujemy
-  await fs.writeFile(path.resolve(LAST_TWEET_FILE), suitableTweet.id, "utf8");
+  let lastTweetId: string | null = null;
+
+try {
+  lastTweetId = await fs.readFile(path.resolve(LAST_TWEET_FILE), "utf8");
+  console.log("Last tweet ID:", lastTweetId);
+} catch (err) {
+  console.log("No lastTweet file found, assuming first run.");
+}
+
 
   return suitableTweet.text;
 }
