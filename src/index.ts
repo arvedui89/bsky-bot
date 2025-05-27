@@ -1,5 +1,5 @@
-import getPostText from "./lib/getPostText";
-import postToBluesky from "./lib/postToBluesky";
+import getPostText from "./lib/getPostText.js";
+import postToBluesky from "./lib/postToBluesky.js";
 
 async function main() {
   try {
