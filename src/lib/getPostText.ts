@@ -28,9 +28,9 @@ export default async function getPostText(): Promise<string | null> {
     throw new Error("Nie znaleziono ID użytkownika Twittera.");
   }
 
-  // Krok 2: Pobierz najnowsze tweety
+  // Krok 2: Pobierz najnowsze tweety (z tekstem i mediami)
   const tweetsResp = await fetch(
-    `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text`,
+    `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets&expansions=attachments.media_keys&media.fields=url`,
     {
       headers: { Authorization: `Bearer ${bearerToken}` },
     }
@@ -42,6 +42,12 @@ export default async function getPostText(): Promise<string | null> {
 
   const tweetsData = await tweetsResp.json();
   const tweets = tweetsData.data;
+  const mediaMap = new Map<string, any>();
+  if (tweetsData.includes?.media) {
+    for (const media of tweetsData.includes.media) {
+      mediaMap.set(media.media_key, media);
+    }
+  }
 
   if (!tweets || tweets.length === 0) {
     console.log("Brak tweetów.");
@@ -54,37 +60,46 @@ export default async function getPostText(): Promise<string | null> {
     const savedId = await fs.readFile(path.resolve(LAST_TWEET_FILE), "utf8");
     lastPostedId = savedId.trim();
   } catch {
-    // plik może nie istnieć przy pierwszym uruchomieniu — to OK
+    // Brak pliku = pierwsze uruchomienie
   }
 
-  // Krok 4: Filtruj i znajdź pierwszy pasujący tweet
+  // Krok 4: Filtruj i wybierz tweet spełniający warunki
   const suitableTweet = tweets.find((tweet: any) => {
-    const text: string = tweet.text;
+    const text: string = tweet.text || "";
     const id: string = tweet.id;
 
-    if (id === lastPostedId) return false;                // już opublikowany
-    if (text.startsWith("RT")) return false;              // retweet
-    if (text.trim().startsWith("@")) return false;        // odpowiedź
+    // pomiń, jeśli już opublikowano
+    if (id === lastPostedId) return false;
 
+    // pomiń retweety
+    if (tweet.referenced_tweets?.some((ref: any) => ref.type === "retweeted")) return false;
+
+    // pomiń odpowiedzi
+    if (text.trim().startsWith("@")) return false;
+
+    // pomiń tweety z linkami do X/Twittera
     const urls = text.match(/https?:\/\/\S+/g);
     if (urls && urls.some(url =>
       url.includes("twitter.com") || url.includes("x.com") || url.includes("t.co")
     )) {
-      return false; // zawiera link do X
+      return false;
     }
 
     return true;
   });
 
-if (!suitableTweet) {
-  console.log("Brak tweetów spełniających kryteria.");
-  return null;
-}
+  if (!suitableTweet) {
+    console.log("Brak tweetów spełniających kryteria.");
+    return null;
+  }
 
-// Krok 5: Zapisz ID tweeta, który zaraz opublikujemy
-await fs.writeFile(path.resolve(LAST_TWEET_FILE), suitableTweet.id, "utf8");
-console.log("Zapisano ID opublikowanego tweeta:", suitableTweet.id);
+  // Krok 5: Zapisz ID wybranego tweeta do pliku
+  try {
+    await fs.writeFile(path.resolve(LAST_TWEET_FILE), suitableTweet.id, "utf8");
+    console.log("Zapisano ID tweeta:", suitableTweet.id);
+  } catch (err) {
+    console.error("Nie udało się zapisać .lastTweet:", err);
+  }
 
-return suitableTweet.text;
-  
+  return suitableTweet.text || "[Tweet zawiera tylko media]";
 }
