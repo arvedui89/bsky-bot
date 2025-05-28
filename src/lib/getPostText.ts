@@ -26,14 +26,21 @@ export default async function getPostText(): Promise<string | null> {
 
   // Krok 2: Pobierz najnowsze tweety
   const tweetsResp = await fetch(
-  `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets,entities&expansions=entities.urls.expanded_url`,
+  `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets,entities`,
 
     {
       headers: { Authorization: `Bearer ${bearerToken}` },
     }
   );
 
+  if (!tweetsResp.ok) {
+    const errorBody = await tweetsResp.text();
+    throw new Error(`Błąd przy pobieraniu tweetów: ${tweetsResp.statusText}\n${errorBody}`);
+  }
+
   const tweetsData = await tweetsResp.json();
+  
+  console.log("Debug: JSON odpowiedzi z Twitter API:", JSON.stringify(tweetsData, null, 2));
   const tweets = tweetsData.data;
 
   if (!tweets || tweets.length === 0) {
