@@ -26,7 +26,8 @@ export default async function getPostText(): Promise<string | null> {
 
   // Krok 2: Pobierz najnowsze tweety
   const tweetsResp = await fetch(
-    `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets`,
+  `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets,entities&expansions=entities.urls.expanded_url`,
+
     {
       headers: { Authorization: `Bearer ${bearerToken}` },
     }
@@ -72,13 +73,18 @@ export default async function getPostText(): Promise<string | null> {
       continue;
     }
 
-    const urls = text.match(/https?:\/\/\S+/g);
-    if (urls && urls.some(url =>
-      url.includes("twitter.com") || url.includes("x.com") || url.includes("t.co")
-    )) {
-      console.log("❌ Pominięto: zawiera link do X/Twittera.");
-      continue;
-    }
+// Zgarnij pełne URL-e z tweet.entities
+const expandedUrls: string[] =
+  tweet.entities?.urls?.map((u: any) => u.expanded_url) || [];
+
+// Jeśli którykolwiek link prowadzi do Twittera / X, pomiń
+if (expandedUrls.some(url =>
+  url.includes("twitter.com") || url.includes("x.com")
+)) {
+  console.log("❌ Pominięto: zawiera link do X/Twittera.");
+  continue;
+}
+
 
     console.log("✅ Wybrano ten tweet do publikacji.");
 
