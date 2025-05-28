@@ -12,7 +12,6 @@ export default async function getPostText(): Promise<{ text: string; images?: st
     throw new Error("Brak tokena dostępu do Twitter API (TWITTER_BEARER_TOKEN).");
   }
 
-  // Krok 1: Pobierz ID użytkownika
   const userResp = await fetch(`https://api.twitter.com/2/users/by/username/${username}`, {
     headers: { Authorization: `Bearer ${bearerToken}` },
   });
@@ -24,7 +23,6 @@ export default async function getPostText(): Promise<{ text: string; images?: st
     throw new Error("Nie znaleziono ID użytkownika Twittera.");
   }
 
-  // Krok 2: Pobierz najnowsze tweety
   const tweetsResp = await fetch(
     `https://api.twitter.com/2/users/${userId}/tweets?max_results=${MAX_TWEETS_TO_CHECK}&tweet.fields=text,attachments,referenced_tweets,entities&expansions=attachments.media_keys&media.fields=url,type`,
     {
@@ -46,7 +44,6 @@ export default async function getPostText(): Promise<{ text: string; images?: st
     return null;
   }
 
-  // Krok 3: Wczytaj ID ostatniego opublikowanego tweeta
   let lastPostedId: string | null = null;
   try {
     const savedId = await fs.readFile(path.resolve(LAST_TWEET_FILE), "utf8");
@@ -55,13 +52,9 @@ export default async function getPostText(): Promise<{ text: string; images?: st
     console.log("Brak pliku .lastTweet, to prawdopodobnie pierwsze uruchomienie.");
   }
 
-  // Krok 4: Przejrzyj i wybierz tweet
   for (const tweet of tweets) {
-    const text: string = tweet.text || "";
+    const rawText: string = tweet.text || "";
     const id: string = tweet.id;
-
-    console.log("\nTweet ID:", id);
-    console.log("Treść:", text.replace(/\s+/g, " ").slice(0, 80) + "...");
 
     if (id === lastPostedId) {
       console.log("❌ Pominięto: już opublikowany.");
@@ -73,22 +66,26 @@ export default async function getPostText(): Promise<{ text: string; images?: st
       continue;
     }
 
-    if (text.trim().startsWith("@")) {
+    if (rawText.trim().startsWith("@")) {
       console.log("❌ Pominięto: odpowiedź.");
       continue;
     }
 
-    const expandedUrls: string[] =
-      tweet.entities?.urls?.map((u: any) => u.expanded_url) || [];
+    const urls = tweet.entities?.urls || [];
+    let expandedText = rawText;
 
-    if (expandedUrls.some(url =>
-      url.includes("twitter.com") || url.includes("x.com")
-    )) {
-      console.log("❌ Pominięto: zawiera link do X/Twittera.");
-      continue;
+    for (const url of urls) {
+      if (url.expanded_url.includes("twitter.com") || url.expanded_url.includes("x.com")) {
+        console.log("❌ Pominięto: zawiera link do X/Twittera.");
+        expandedText = null;
+        break;
+      }
+
+      expandedText = expandedText.replace(url.url, url.expanded_url);
     }
 
-    // Pobierz media z tweetu
+    if (expandedText === null) continue;
+
     const mediaKeys = tweet.attachments?.media_keys || [];
     const mediaUrls = mediaKeys
       .map((key: string) =>
@@ -96,11 +93,15 @@ export default async function getPostText(): Promise<{ text: string; images?: st
       )
       .filter((url: string | undefined): url is string => !!url);
 
-    const finalText = text.trim();
+    const finalText = expandedText.trim();
+
+    if (finalText === "" && mediaUrls.length === 0) {
+      console.log("❌ Pominięto: pusty tweet bez zdjęć.");
+      continue;
+    }
 
     console.log("✅ Wybrano ten tweet do publikacji.");
 
-    // Krok 5: Zapisz ID tweeta do pliku
     try {
       await fs.writeFile(path.resolve(LAST_TWEET_FILE), id, "utf8");
     } catch (err) {
