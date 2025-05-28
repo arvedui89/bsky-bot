@@ -110,3 +110,6 @@ for (const tweet of tweets) {
 
   return { text: finalText, images: mediaUrls };
 }
+
+  return null; // ← Jeśli żaden tweet nie został wybrany
+}
