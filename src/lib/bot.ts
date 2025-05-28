@@ -11,6 +11,11 @@ interface BotOptions {
   dryRun: boolean;
 }
 
+interface PostContent {
+  text: string;
+  images?: string[];
+}
+
 export default class Bot {
   #agent;
 
@@ -27,42 +32,67 @@ export default class Bot {
     return this.#agent.login(loginOpts);
   }
 
-  async post(
-    text:
-      | string
-      | (
-        & Partial<AppBskyFeedPost.Record>
-        & Omit<AppBskyFeedPost.Record, "createdAt">
-      ),
-  ) {
-    if (typeof text === "string") {
-      const richText = new RichText({ text });
-      await richText.detectFacets(this.#agent);
-      const record = {
-        text: richText.text,
-        facets: richText.facets,
+  async post({ text, images }: PostContent) {
+    const richText = new RichText({ text });
+    await richText.detectFacets(this.#agent);
+
+    let embed = undefined;
+
+    if (images && images.length > 0) {
+      const uploaded = await Promise.all(
+        images.map(async (url) => {
+          const response = await fetch(url);
+          const buffer = await response.arrayBuffer();
+          const type = response.headers.get("content-type") || "image/jpeg";
+
+          const uploadResp = await this.#agent.uploadBlob(
+            new Uint8Array(buffer),
+            { encoding: type }
+          );
+
+          return {
+            image: uploadResp.data.blob,
+            alt: "Obrazek z tweeta",
+          };
+        })
+      );
+
+      embed = {
+        $type: "app.bsky.embed.images",
+        images: uploaded,
       };
-      return this.#agent.post(record);
-    } else {
-      return this.#agent.post(text);
     }
+
+    const record: Partial<AppBskyFeedPost.Record> = {
+      text: richText.text,
+      facets: richText.facets,
+      createdAt: new Date().toISOString(),
+      embed,
+    };
+
+    return this.#agent.post(record);
   }
 
   static async run(
-    getPostText: () => Promise<string>,
-    botOptions?: Partial<BotOptions>,
+    getPostContent: () => Promise<PostContent>,
+    botOptions?: Partial<BotOptions>
   ) {
     const { service, dryRun } = botOptions
       ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
+
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const text = (await getPostText()).trim();
+
+    const { text, images } = await getPostContent();
+    const content = { text: text.trim(), images };
+
     if (!dryRun) {
-      await bot.post(text);
+      await bot.post(content);
     } else {
-      console.log(text);
+      console.log("DRY RUN:", content);
     }
-    return text;
+
+    return content.text;
   }
 }
