@@ -84,7 +84,7 @@ export default async function getPostText(): Promise<{ text: string, mediaUrls: 
 
     await fs.writeFile(path.resolve(LAST_TWEET_FILE), id, "utf8");
 
-    return { text: finalText, mediaUrls };
+    return { text: finalText, images: mediaUrls };
   }
 
   return null;
