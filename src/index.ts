@@ -2,22 +2,25 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log('Loaded ENV:');
-console.log('BSKY_HANDLE:', process.env.BSKY_HANDLE);
-console.log('BSKY_PASSWORD:', process.env.BSKY_PASSWORD);
+console.log("Loaded ENV:");
+console.log("BSKY_HANDLE:", process.env.BSKY_HANDLE);
+console.log("BSKY_PASSWORD:", process.env.BSKY_PASSWORD);
 console.log("Starting bot…");
 
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 
 (async () => {
-  const text = await getPostText();
+  const post = await getPostText();
 
-  if (!text) {
-    console.log("Brak tekstu do opublikowania. Przerywam.");
+  if (!post || !post.text) {
+    console.log("Brak treści do opublikowania. Przerywam.");
     return;
   }
 
-  await Bot.run(() => Promise.resolve(text), { dryRun: false });
-  console.log(`[${new Date().toISOString()}] Posted: "${text}"`);
+  const { text, images } = post;
+  console.log("Publikuję post z treścią i zdjęciami:", { text, images });
+
+  await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
+  console.log(`[${new Date().toISOString()}] Opublikowano: "${text}"`);
 })();
