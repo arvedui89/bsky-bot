@@ -4,7 +4,7 @@ import path from "path";
 const LAST_TWEET_FILE = ".lastTweet";
 const MAX_TWEETS_TO_CHECK = 10;
 
-export default async function getPostText(): Promise<{ text: string; images?: string[] } | null> {
+export default async function getPostText(): Promise<{ id: string; text: string; images?: string[] } | null> {
   const username = "LFC_pl";
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
