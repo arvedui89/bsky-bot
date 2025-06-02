@@ -1,3 +1,10 @@
+name: Post to Bluesky
+
+on:
+  workflow_dispatch:   # ← pozwala ręcznie uruchamiać bota przyciskiem „Run workflow”
+#  schedule:
+#    - cron: "*/5 * * * *" # co 5 minut
+
 jobs:
   build:
     runs-on: ubuntu-latest
