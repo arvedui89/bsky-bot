@@ -12,8 +12,9 @@ console.log("Starting bot…");
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 
-function normalizeId(id: string | null | undefined): string | null {
-  return id ? id.trim().replace(/[\r\n]/g, "") : null;
+// Uniwersalna funkcja normalizacji ID
+function normalize(id: string | number | null | undefined): string {
+  return (id ?? "").toString().trim().replace(/[\r\n]/g, "");
 }
 
 (async () => {
@@ -24,15 +25,19 @@ function normalizeId(id: string | null | undefined): string | null {
     return;
   }
 
-  const currentId = normalizeId(post.id);
-  const lastId = fs.existsSync(".lastTweet")
-    ? normalizeId(fs.readFileSync(path.resolve(".lastTweet"), "utf8"))
-    : null;
+  const pathToIdFile = path.resolve(".lastTweet");
 
-  console.log("lastId from cache:", lastId);
-  console.log("current post.id:", currentId);
+  const lastId = normalize(fs.existsSync(pathToIdFile) ? fs.readFileSync(pathToIdFile, "utf8") : null);
+  const currentId = normalize(post.id);
 
-  if (lastId && currentId && lastId === currentId) {
+  // 🔍 Szczegółowe logowanie porównania
+  console.log("➡️ current post.id:", JSON.stringify(currentId));
+  console.log("➡️ cached lastId:", JSON.stringify(lastId));
+  console.log("ℹ️ typeof currentId:", typeof currentId);
+  console.log("ℹ️ typeof lastId:", typeof lastId);
+  console.log("🧪 Czy identyczne?", currentId === lastId);
+
+  if (currentId === lastId) {
     console.log(`❌ Ten sam wpis (${currentId}) został już opublikowany. Przerywam.`);
     return;
   }
@@ -44,7 +49,7 @@ function normalizeId(id: string | null | undefined): string | null {
   console.log(`[${new Date().toISOString()}] ✅ Opublikowano: "${text}"`);
 
   if (currentId) {
-    fs.writeFileSync(".lastTweet", currentId, "utf8");
+    fs.writeFileSync(pathToIdFile, currentId, "utf8");
     console.log("💾 Zaktualizowano .lastTweet na:", currentId);
   } else {
     console.warn("⚠️ Brak post.id – nie zapisano .lastTweet");
