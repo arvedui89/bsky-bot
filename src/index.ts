@@ -27,7 +27,15 @@ import getPostText from "./lib/getPostText.js";
     console.log(`Ten sam wpis (${post.id}) został już opublikowany. Przerywam.`);
     return;
   }
-
+# odtąd
+  const lastId = readLastTweetId();
+console.log("Odczytano lastTweet ID:", lastId);
+console.log("ID aktualnego posta:", post.id);
+if (lastId === post.id) {
+  console.log(`Ten sam wpis (${post.id}) został już opublikowany. Przerywam.`);
+  return;
+}
+# dotąd
   const { text, images } = post;
   console.log("Publikuję post z treścią i zdjęciami:", { text, images });
 
