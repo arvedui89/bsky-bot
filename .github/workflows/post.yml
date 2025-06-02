@@ -1,9 +1,9 @@
 name: Post
 
 on:
-  schedule:
-  #  cron: "*/30 * * * *" # co 5 minut
-  workflow_dispatch: # umożliwia ręczne uruchomienie
+  workflow_dispatch:
+#  schedule:
+#    - cron: "*/30 * * * *" # co 5 minut
 
 jobs:
   post:
