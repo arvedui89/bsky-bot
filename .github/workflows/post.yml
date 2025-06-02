@@ -34,8 +34,9 @@ jobs:
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
 
       - name: Zapisz nowy .lastTweet jako artifact
-        if: success() && exists('.lastTweet')
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: lastTweet
           path: .lastTweet
+          if-no-files-found: ignore
