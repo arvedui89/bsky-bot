@@ -13,29 +13,19 @@ import getPostText from "./lib/getPostText.js";
 
 (async () => {
   const post = await getPostText();
+if (!post || !post.text) return;
 
-  if (!post || !post.text) {
-    console.log("Brak treści do opublikowania. Przerywam.");
-    return;
-  }
+const lastId = readLastTweetId()?.trim().replace(/\r|\n/g, "");
+const currentId = post.id?.trim().replace(/\r|\n/g, "");
 
-  const lastId = fs.existsSync(".lastTweet")
-    ? fs.readFileSync(".lastTweet", "utf8").trim()
-    : null;
+console.log("📂 Odczytany lastTweet ID:", JSON.stringify(lastId));
+console.log("🆕 ID aktualnego posta:", JSON.stringify(currentId));
 
-  if (lastId === post.id) {
-    console.log(`Ten sam wpis (${post.id}) został już opublikowany. Przerywam.`);
-    return;
-  }
-# odtąd
-  const lastId = readLastTweetId();
-console.log("Odczytano lastTweet ID:", lastId);
-console.log("ID aktualnego posta:", post.id);
-if (lastId === post.id) {
-  console.log(`Ten sam wpis (${post.id}) został już opublikowany. Przerywam.`);
+if (lastId === currentId) {
+  console.log(`❌ Ten sam wpis (${currentId}) został już opublikowany. Przerywam.`);
   return;
 }
-# dotąd
+
   const { text, images } = post;
   console.log("Publikuję post z treścią i zdjęciami:", { text, images });
 
