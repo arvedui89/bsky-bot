@@ -19,10 +19,19 @@ import getPostText from "./lib/getPostText.js";
     return;
   }
 
+  const lastId = fs.existsSync(".lastTweet")
+    ? fs.readFileSync(".lastTweet", "utf8").trim()
+    : null;
+
+  if (lastId === post.id) {
+    console.log(`Ten sam wpis (${post.id}) został już opublikowany. Przerywam.`);
+    return;
+  }
+
   const { text, images } = post;
   console.log("Publikuję post z treścią i zdjęciami:", { text, images });
 
-    await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
+  await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
   console.log(`[${new Date().toISOString()}] Opublikowano: "${text}"`);
 
   if (post.id) {
@@ -31,3 +40,4 @@ import getPostText from "./lib/getPostText.js";
   } else {
     console.warn("⚠️ Brak post.id – nie zapisano .lastTweet");
   }
+})();
