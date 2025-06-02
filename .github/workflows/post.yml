@@ -1,43 +1,45 @@
-name: Post to Bluesky
+name: Post
 
 on:
-  workflow_dispatch:   # ← pozwala ręcznie uruchamiać bota przyciskiem „Run workflow”
- # schedule:
- #   - cron: "*/30 * * * *" # co 30 minut
+  schedule:
+  #  - cron: "*/30 * * * *" # co 5 minut
+  workflow_dispatch: # umożliwia ręczne uruchomienie
 
 jobs:
-  build:
+  post:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Przywróć cache .lastTweet
         uses: actions/cache@v4
         with:
           path: .lastTweet
           key: lastTweet-cache
-          restore-keys: |
-            lastTweet-cache
+          restore-keys: lastTweet-cache
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Utwórz plik .lastTweet, jeśli nie istnieje
+        run: |
+          if [ ! -f .lastTweet ]; then
+            echo "0" > .lastTweet
+          fi
+
+      - name: Ustaw Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version: 20
 
-      - run: npm ci
-      - run: npm run build
+      - name: Instaluj zależności
+        run: npm ci
 
-      - name: Send post
-        run: npm start
-        env:
-          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
-          BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
-          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+      - name: Uruchom bota
+        run: node index.js
 
       - name: Zaktualizuj cache .lastTweet
         uses: actions/cache@v4
         with:
           path: .lastTweet
-          key: lastTweet-cache-${{ github.run_id }}
-          restore-keys: |
-            lastTweet-cache
+          key: lastTweet-cache-${{ hashFiles('.lastTweet') }}
+          restore-keys: lastTweet-cache
