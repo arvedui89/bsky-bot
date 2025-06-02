@@ -102,13 +102,7 @@ for (const tweet of tweets) {
 
   console.log("✅ Wybrano ten tweet do publikacji.");
 
-  try {
-    await fs.writeFile(path.resolve(LAST_TWEET_FILE), id, "utf8");
-  } catch (err) {
-    console.error("Nie udało się zapisać .lastTweet:", err);
-  }
-
-  return { text: finalText, images: mediaUrls };
+  return { text: finalText, images: mediaUrls, id };
 }
 
   return null; // ← Jeśli żaden tweet nie został wybrany
