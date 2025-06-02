@@ -22,6 +22,12 @@ import getPostText from "./lib/getPostText.js";
   const { text, images } = post;
   console.log("Publikuję post z treścią i zdjęciami:", { text, images });
 
-  await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
+    await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
   console.log(`[${new Date().toISOString()}] Opublikowano: "${text}"`);
-})();
+
+  if (post.id) {
+    fs.writeFileSync(".lastTweet", post.id, "utf8");
+    console.log("Zaktualizowano .lastTweet na:", post.id);
+  } else {
+    console.warn("⚠️ Brak post.id – nie zapisano .lastTweet");
+  }
