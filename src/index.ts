@@ -29,6 +29,9 @@ function normalizeId(id: string | null | undefined): string | null {
     ? normalizeId(fs.readFileSync(path.resolve(".lastTweet"), "utf8"))
     : null;
 
+  console.log("lastId from cache:", lastId);
+  console.log("current post.id:", currentId);
+
   if (lastId && currentId && lastId === currentId) {
     console.log(`❌ Ten sam wpis (${currentId}) został już opublikowany. Przerywam.`);
     return;
