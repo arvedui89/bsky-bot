@@ -34,10 +34,8 @@ jobs:
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
 
-      - name: Zaktualizuj cache .lastTweet
-        uses: actions/cache@v4
+      - name: Zapisz nowy cache .lastTweet
+        uses: actions/cache/save@v4
         with:
           path: .lastTweet
-          key: lastTweet-cache-${{ hashFiles('.lastTweet') }}
-          restore-keys: |
-            lastTweet-cache
+          key: lastTweet-cache-${{ github.run_id }}
