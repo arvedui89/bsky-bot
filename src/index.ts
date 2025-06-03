@@ -4,54 +4,38 @@ import fs from "fs";
 import path from "path";
 dotenv.config();
 
-console.log("Loaded ENV:");
 console.log("BSKY_HANDLE:", process.env.BSKY_HANDLE);
-console.log("BSKY_PASSWORD:", process.env.BSKY_PASSWORD);
 console.log("Starting bot…");
 
 import Bot from "./lib/bot.js";
-import getPostText from "./lib/getPostText.js";
+import getPostsToPublish from "./lib/getPostText.js";
 
-// Uniwersalna funkcja normalizacji ID
-function normalize(id: string | number | null | undefined): string {
-  return (id ?? "").toString().trim().replace(/[\r\n]/g, "");
-}
+const normalize = (id: string | number | null | undefined): string =>
+  (id ?? "").toString().trim().replace(/[\r\n]/g, "");
 
 (async () => {
-  const post = await getPostText();
+  const posts = await getPostsToPublish();
 
-  if (!post || !post.text) {
-    console.log("Brak treści do opublikowania. Przerywam.");
+  if (!posts || posts.length === 0) {
+    console.log("Brak nowych tweetów do publikacji.");
     return;
   }
 
   const pathToIdFile = path.resolve(".lastTweet");
+  const lastPost = posts[posts.length - 1]; // ostatni z listy = najnowszy tweet, jaki zaraz opublikujemy
 
-  const lastId = normalize(fs.existsSync(pathToIdFile) ? fs.readFileSync(pathToIdFile, "utf8") : null);
-  const currentId = normalize(post.id);
+  for (const post of posts) {
+    console.log("📤 Publikuję tweet:", { id: post.id, text: post.text });
 
-  // 🔍 Szczegółowe logowanie porównania
-  console.log("➡️ current post.id:", JSON.stringify(currentId));
-  console.log("➡️ cached lastId:", JSON.stringify(lastId));
-  console.log("ℹ️ typeof currentId:", typeof currentId);
-  console.log("ℹ️ typeof lastId:", typeof lastId);
-  console.log("🧪 Czy identyczne?", currentId === lastId);
+    await Bot.run(() => Promise.resolve({ text: post.text, images: post.images }), { dryRun: false });
 
-  if (currentId === lastId) {
-    console.log(`❌ Ten sam wpis (${currentId}) został już opublikowany. Przerywam.`);
-    return;
+    console.log(`[${new Date().toISOString()}] ✅ Opublikowano: "${post.text}"`);
   }
 
-  const { text, images } = post;
-  console.log("✅ Publikuję post z treścią i zdjęciami:", { text, images });
-
-  await Bot.run(() => Promise.resolve({ text, images }), { dryRun: false });
-  console.log(`[${new Date().toISOString()}] ✅ Opublikowano: "${text}"`);
-
-  if (currentId) {
-    fs.writeFileSync(pathToIdFile, currentId, "utf8");
-    console.log("💾 Zaktualizowano .lastTweet na:", currentId);
+  if (lastPost?.id) {
+    fs.writeFileSync(pathToIdFile, normalize(lastPost.id), "utf8");
+    console.log("💾 Zaktualizowano .lastTweet na:", lastPost.id);
   } else {
-    console.warn("⚠️ Brak post.id – nie zapisano .lastTweet");
+    console.warn("⚠️ Brak ID ostatniego wpisu – nie zapisano .lastTweet");
   }
 })();
