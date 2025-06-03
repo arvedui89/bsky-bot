@@ -3,23 +3,16 @@ name: "Post to Bluesky"
 on:
   workflow_dispatch:
 #  schedule:
-#    - cron: "*/5 * * * *" # co 5 minut
+#    - cron: "*/5 * * * *"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: Przywróć cache .lastTweet
-        uses: actions/cache@v4
-        with:
-          path: .lastTweet
-          key: lastTweet-cache
-          restore-keys: |
-            lastTweet-cache
-
-      - name: Use Node.js
+      - name: Ustaw Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
@@ -27,15 +20,19 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Send post
+      - name: Uruchom bota
         run: npm start
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
 
-      - name: Zapisz nowy cache .lastTweet
-        uses: actions/cache/save@v4
-        with:
-          path: .lastTweet
-          key: lastTweet-cache-${{ github.run_id }}
+      - name: Commit pliku .lastTweet (jeśli zmieniony)
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .lastTweet || true
+          git diff --cached --quiet || git commit -m "🤖 Update .lastTweet"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
