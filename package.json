@@ -11,6 +11,7 @@
     "watch": "tsc --watch",
     "start": "node .",
     "dev": "node ."
+    "meta-fetcher": "^1.0.6"
   },
   "keywords": [
     "bsky",
