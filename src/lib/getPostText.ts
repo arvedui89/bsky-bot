@@ -84,11 +84,20 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       .map((key: string) => mediaIncludes.find((m: any) => m.media_key === key && m.type === "photo")?.url)
       .filter((url: string | undefined): url is string => !!url);
 
-    const lastValidUrl = urls.find((u: any) => !u.expanded_url.includes("twitter.com") && !u.expanded_url.includes("x.com"))?.expanded_url;
-    const finalText = lastValidUrl
-      ? `${expandedText.trim()}\n\n${lastValidUrl}`
-      : expandedText.trim();
+    // Znajdź pierwszy nie-Xowy link
+    const lastValidUrl = urls.find(
+      (u: any) =>
+        !u.expanded_url.includes("twitter.com") &&
+        !u.expanded_url.includes("x.com")
+    )?.expanded_url;
 
+    // Sprawdź, czy ten link już występuje w tekście
+    const alreadyIncluded = lastValidUrl && expandedText.includes(lastValidUrl);
+
+    // Dodaj go tylko, jeśli nie był już wcześniej
+    const finalText = !lastValidUrl || alreadyIncluded
+      ? expandedText.trim()
+      : `${expandedText.trim()}\n\n${lastValidUrl}`;
 
     if (finalText === "" && mediaUrls.length === 0) {
       console.log("❌ Pominięto: pusty tweet bez zdjęć.");
