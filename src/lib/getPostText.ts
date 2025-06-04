@@ -74,7 +74,18 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
         expandedText = null;
         break;
       }
-      expandedText = expandedText.replace(url.url, url.expanded_url);
+      // Warianty testowe — odkomentuj jeden lub połącz oba
+
+      // 1. Zero-width space po linku:
+      const modifiedUrl = url.expanded_url + "\u200B";
+
+      // 2. Pusta linia po linku:
+      // const modifiedUrl = url.expanded_url + "\n\n";
+
+      // 3. Kombinacja obu:
+      const modifiedUrl = url.expanded_url + "\u200B\n\n";
+
+      expandedText = expandedText.replace(url.url, modifiedUrl);
     }
 
     if (expandedText === null) continue;
