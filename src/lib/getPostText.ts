@@ -1,10 +1,34 @@
 import fs from "fs/promises";
 import path from "path";
+import fetch from "node-fetch"; // dodane
 
 const LAST_TWEET_FILE = ".lastTweet";
 const MAX_TWEETS_TO_CHECK = 10;
 
-export default async function getPostsToPublish(): Promise<Array<{ id: string; text: string; images?: string[] }>> {
+async function getExternalMetadataFromLink(url: string) {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    const html = await res.text();
+
+    const getMeta = (property: string) => {
+      const regex = new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i");
+      const match = html.match(regex);
+      return match ? match[1] : undefined;
+    };
+
+    return {
+      uri: url,
+      title: getMeta("og:title") || getMeta("twitter:title"),
+      description: getMeta("og:description") || getMeta("twitter:description"),
+      thumbnail: getMeta("og:image") || getMeta("twitter:image"),
+    };
+  } catch (e) {
+    console.warn("❌ Nie udało się pobrać metadanych z linku:", url);
+    return undefined;
+  }
+}
+
+export default async function getPostsToPublish(): Promise<Array<{ id: string; text: string; images?: string[], external?: any }>> {
   const username = "LFC_pl";
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
@@ -44,7 +68,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
     console.log("Brak pliku .lastTweet.");
   }
 
-  const posts: Array<{ id: string; text: string; images?: string[] }> = [];
+  const posts: Array<{ id: string; text: string; images?: string[], external?: any }> = [];
 
   for (const tweet of tweets) {
     const id = tweet.id;
@@ -85,11 +109,11 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       .map((key: string) => mediaIncludes.find((m: any) => m.media_key === key && m.type === "photo")?.url)
       .filter((url: string | undefined): url is string => !!url);
 
-    // Znajdź pierwszy nie-Xowy link i zamień na https
     const lastValidUrl = urls.find(
       (u: any) =>
         !u.expanded_url.includes("twitter.com") &&
-        !u.expanded_url.includes("x.com")
+        !u.expanded_url.includes("x.com") &&
+        !u.expanded_url.includes("pic.twitter.com")
     )?.expanded_url?.replace(/^http:\/\//, "https://");
 
     let finalText = expandedText.trim();
@@ -103,14 +127,18 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       }
     }
 
-    if (finalText === "" && mediaUrls.length === 0) {
-      console.log("❌ Pominięto: pusty tweet bez zdjęć.");
+    let external;
+    if (lastValidUrl && mediaUrls.length === 0) {
+      external = await getExternalMetadataFromLink(lastValidUrl);
+    }
+
+    if (finalText === "" && mediaUrls.length === 0 && !external) {
+      console.log("❌ Pominięto: pusty tweet bez zdjęć i linków.");
       continue;
     }
 
-    posts.push({ id, text: finalText, images: mediaUrls });
+    posts.push({ id, text: finalText, images: mediaUrls, external });
   }
 
-  // Odwracamy kolejność: od najstarszego do najnowszego
   return posts.reverse();
 }
