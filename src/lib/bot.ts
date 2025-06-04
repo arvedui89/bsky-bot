@@ -14,7 +14,14 @@ interface BotOptions {
 interface PostContent {
   text: string;
   images?: string[];
+  external?: {
+    uri: string;
+    title: string;
+    description?: string;
+    thumbnail?: string; // URL do obrazka
+  };
 }
+
 
 export default class Bot {
   #agent;
@@ -36,32 +43,61 @@ export default class Bot {
     const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
 
-    let embed = undefined;
+  let embed: any = undefined;
 
-    if (images && images.length > 0) {
-      const uploaded = await Promise.all(
-        images.map(async (url) => {
-          const response = await fetch(url);
-          const buffer = await response.arrayBuffer();
-          const type = response.headers.get("content-type") || "image/jpeg";
+  if (images && images.length > 0) {
+    const uploaded = await Promise.all(
+      images.map(async (url) => {
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        const type = response.headers.get("content-type") || "image/jpeg";
 
-          const uploadResp = await this.#agent.uploadBlob(
-            new Uint8Array(buffer),
-            { encoding: type }
-          );
+        const uploadResp = await this.#agent.uploadBlob(
+          new Uint8Array(buffer),
+          { encoding: type }
+        );
 
-          return {
-            image: uploadResp.data.blob,
-            alt: "Obrazek z tweeta",
-          };
-        })
+      return {
+        image: uploadResp.data.blob,
+        alt: "Obrazek z tweeta",
+      };
+    })
+  );
+
+  embed = {
+    $type: "app.bsky.embed.images",
+    images: uploaded,
+  };
+} else if (external) {
+  let thumbnailBlob = undefined;
+
+  if (external.thumbnail) {
+    try {
+      const response = await fetch(external.thumbnail);
+      const buffer = await response.arrayBuffer();
+      const type = response.headers.get("content-type") || "image/jpeg";
+
+      const uploadResp = await this.#agent.uploadBlob(
+        new Uint8Array(buffer),
+        { encoding: type }
       );
 
-      embed = {
-        $type: "app.bsky.embed.images",
-        images: uploaded,
-      };
+      thumbnailBlob = uploadResp.data.blob;
+    } catch (err) {
+      console.warn("⚠️ Nie udało się pobrać miniaturki:", external.thumbnail);
     }
+  }
+
+  embed = {
+    $type: "app.bsky.embed.external",
+    external: {
+      uri: external.uri,
+      title: external.title,
+      description: external.description || "",
+      thumb: thumbnailBlob,
+    },
+  };
+}
 
     const record: Partial<AppBskyFeedPost.Record> = {
       text: richText.text,
@@ -84,8 +120,9 @@ export default class Bot {
     const bot = new Bot(service);
     await bot.login(bskyAccount);
 
-    const { text, images } = await getPostContent();
-    const content = { text: text.trim(), images };
+    const { text, images, external } = await getPostContent();
+    const content = { text: text.trim(), images, external };
+
 
     if (!dryRun) {
       await bot.post(content);
