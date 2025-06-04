@@ -84,7 +84,11 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       .map((key: string) => mediaIncludes.find((m: any) => m.media_key === key && m.type === "photo")?.url)
       .filter((url: string | undefined): url is string => !!url);
 
-    const finalText = `${expandedText.trim()}\n\n${link}`;:contentReference[oaicite:29]{index=29};
+    const lastValidUrl = urls.find((u: any) => !u.expanded_url.includes("twitter.com") && !u.expanded_url.includes("x.com"))?.expanded_url;
+    const finalText = lastValidUrl
+      ? `${expandedText.trim()}\n\n${lastValidUrl}`
+      : expandedText.trim();
+
 
     if (finalText === "" && mediaUrls.length === 0) {
       console.log("❌ Pominięto: pusty tweet bez zdjęć.");
