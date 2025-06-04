@@ -74,18 +74,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
         expandedText = null;
         break;
       }
-      // Warianty testowe — odkomentuj jeden lub połącz oba
-
-      // 1. Zero-width space po linku:
-      // const modifiedUrl = url.expanded_url + "\u200B";
-
-      // 2. Pusta linia po linku:
-      // const modifiedUrl = url.expanded_url + "\n\n";
-
-      // 3. Kombinacja obu:
-      const modifiedUrl = url.expanded_url + "\u200B\n\n";
-
-      expandedText = expandedText.replace(url.url, modifiedUrl);
+     expandedText = expandedText.replace(url.url, url.expanded_url);
     }
 
     if (expandedText === null) continue;
@@ -95,7 +84,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       .map((key: string) => mediaIncludes.find((m: any) => m.media_key === key && m.type === "photo")?.url)
       .filter((url: string | undefined): url is string => !!url);
 
-    const finalText = expandedText.trim();
+    const finalText = `${expandedText.trim()}\n\n${link}`;:contentReference[oaicite:29]{index=29}
 
     if (finalText === "" && mediaUrls.length === 0) {
       console.log("❌ Pominięto: pusty tweet bez zdjęć.");
