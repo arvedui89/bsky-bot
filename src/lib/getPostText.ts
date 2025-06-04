@@ -74,7 +74,8 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
         expandedText = null;
         break;
       }
-     expandedText = expandedText.replace(url.url, url.expanded_url);
+      const cleanUrl = url.expanded_url.replace(/^http:\/\//, "https://");
+      expandedText = expandedText.replace(url.url, cleanUrl);
     }
 
     if (expandedText === null) continue;
@@ -84,20 +85,23 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       .map((key: string) => mediaIncludes.find((m: any) => m.media_key === key && m.type === "photo")?.url)
       .filter((url: string | undefined): url is string => !!url);
 
-    // Znajdź pierwszy nie-Xowy link
+    // Znajdź pierwszy nie-Xowy link i zamień na https
     const lastValidUrl = urls.find(
       (u: any) =>
         !u.expanded_url.includes("twitter.com") &&
         !u.expanded_url.includes("x.com")
-    )?.expanded_url;
+    )?.expanded_url?.replace(/^http:\/\//, "https://");
 
-    // Sprawdź, czy ten link już występuje w tekście
-    const alreadyIncluded = lastValidUrl && expandedText.includes(lastValidUrl);
+    let finalText = expandedText.trim();
 
-    // Dodaj go tylko, jeśli nie był już wcześniej
-    const finalText = !lastValidUrl || alreadyIncluded
-      ? expandedText.trim()
-      : `${expandedText.trim()}\n\n${lastValidUrl}`;
+    if (lastValidUrl) {
+      const linkRegex = new RegExp(lastValidUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+      const linkInOwnParagraph = finalText.split("\n").some(line => line.trim() === lastValidUrl);
+
+      if (!linkRegex.test(finalText) || !linkInOwnParagraph) {
+        finalText += `\n\n${lastValidUrl}`;
+      }
+    }
 
     if (finalText === "" && mediaUrls.length === 0) {
       console.log("❌ Pominięto: pusty tweet bez zdjęć.");
