@@ -77,7 +77,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       // Warianty testowe — odkomentuj jeden lub połącz oba
 
       // 1. Zero-width space po linku:
-      const modifiedUrl = url.expanded_url + "\u200B";
+      // const modifiedUrl = url.expanded_url + "\u200B";
 
       // 2. Pusta linia po linku:
       // const modifiedUrl = url.expanded_url + "\n\n";
