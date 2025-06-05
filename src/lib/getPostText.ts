@@ -16,7 +16,7 @@ async function getExternalMetadataFromLink(url: string) {
     };
 
     return {
-      text: `${getMeta("og:title") || "Link"}\n\nℹ️ Zobacz więcej w podglądzie linku.`
+      text: `${getMeta("og:title") || "ʟꜰᴄ Nowy artykuł",
       external: {
         uri: url,
         title: getMeta("og:title") || getMeta("twitter:title"),
