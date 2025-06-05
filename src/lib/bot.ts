@@ -88,19 +88,20 @@ export default class Bot {
     }
   }
 
-  embed = {
-    $type: "app.bsky.embed.external",
-    external: {
-      uri: external.uri,
-      title: external.title,
-      description: external.description || "",
-      thumb: thumbnailBlob,
-    },
-  };
+embed = {
+  $type: "app.bsky.embed.external",
+  external: {
+    uri: external.uri,
+    title: external.title || "Tytuł testowy",
+    description: external.description || "Opis testowy",
+    thumb: thumbnailBlob ?? undefined, // bez miniaturki jeśli nie działa
+  },
+};
+
 }
 
     const record: Partial<AppBskyFeedPost.Record> = {
-      text: richText.text,
+      text: "Podgląd testowy:",
       facets: richText.facets,
       createdAt: new Date().toISOString(),
       embed,
