@@ -16,10 +16,13 @@ async function getExternalMetadataFromLink(url: string) {
     };
 
     return {
-      uri: url,
-      title: getMeta("og:title") || getMeta("twitter:title"),
-      description: getMeta("og:description") || getMeta("twitter:description"),
-      thumbnail: getMeta("og:image") || getMeta("twitter:image"),
+      text,
+      external: {
+        uri: url,
+        title: getMeta("og:title") || getMeta("twitter:title"),
+        description: getMeta("og:description") || getMeta("twitter:description"),
+        thumbnail: getMeta("og:image") || getMeta("twitter:image"),
+      }
     };
   } catch (e) {
     console.warn("❌ Nie udało się pobrać metadanych z linku:", url);
