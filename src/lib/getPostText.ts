@@ -15,17 +15,26 @@ async function getExternalMetadataFromLink(url: string) {
       return match ? match[1] : undefined;
     };
 
+    const title = getMeta("og:title") || getMeta("twitter:title");
+    const description = getMeta("og:description") || getMeta("twitter:description");
+    const thumbnail = getMeta("og:image") || getMeta("twitter:image");
+
+    if (!title && !description && !thumbnail) {
+      console.warn("⚠️ Nie znaleziono żadnych metadanych w linku:", url);
+      return undefined;
+    }
+
     return {
-      text: getMeta("og:title") || "ʟꜰᴄ Nowy artykuł",
+      text: title || "ʟꜰᴄ Nowy artykuł",
       external: {
         uri: url,
-        title: getMeta("og:title") || getMeta("twitter:title"),
-        description: getMeta("og:description") || getMeta("twitter:description"),
-        thumbnail: getMeta("og:image") || getMeta("twitter:image"),
+        title,
+        description,
+        thumbnail,
       }
     };
   } catch (e) {
-    console.warn("❌ Nie udało się pobrać metadanych z linku:", url);
+    console.warn("❌ Błąd pobierania metadanych z linku:", url, e);
     return undefined;
   }
 }
