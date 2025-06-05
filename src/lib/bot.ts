@@ -101,11 +101,12 @@ embed = {
 }
 
     const record: Partial<AppBskyFeedPost.Record> = {
-      text: "Podgląd testowy:",
-      facets: richText.facets,
-      createdAt: new Date().toISOString(),
-      embed,
-    };
+  text: richText.text,
+  facets: richText.facets,
+  createdAt: new Date().toISOString(),
+  embed,
+};
+
 
     return this.#agent.post(record);
   }
