@@ -39,7 +39,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
     headers: { Authorization: `Bearer ${bearerToken}` },
   });
 
-  const userData = await userResp.json();
+  const userData = await userResp.json() as any;
   const userId = userData.data?.id;
   if (!userId) throw new Error("Nie znaleziono ID użytkownika Twittera.");
 
@@ -55,7 +55,7 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
     throw new Error(`Błąd pobierania tweetów: ${tweetsResp.statusText}\n${errorText}`);
   }
 
-  const tweetsData = await tweetsResp.json();
+  const tweetsData = await tweetsResp.json() as any;
   const tweets = tweetsData.data || [];
   const mediaIncludes = tweetsData.includes?.media || [];
 
