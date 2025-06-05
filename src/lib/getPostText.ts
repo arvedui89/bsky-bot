@@ -1,6 +1,5 @@
 import fs from "fs/promises";
 import path from "path";
-import fetch from "node-fetch"; // dodane
 
 const LAST_TWEET_FILE = ".lastTweet";
 const MAX_TWEETS_TO_CHECK = 10;
