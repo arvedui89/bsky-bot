@@ -15,16 +15,15 @@ async function getExternalMetadataFromLink(url: string) {
       return match ? match[1] : undefined;
     };
 
-  return {
-    text: getMeta("og:title") || "ʟꜰᴄ Nowy artykuł",
-    external: {
-      uri: url,
-      title: getMeta("og:title") || getMeta("twitter:title"),
-      description: getMeta("og:description") || getMeta("twitter:description"),
-      thumbnail: getMeta("og:image") || getMeta("twitter:image"),
-    }
-  };
-
+    return {
+      text: getMeta("og:title") || "ʟꜰᴄ Nowy artykuł",
+      external: {
+        uri: url,
+        title: getMeta("og:title") || getMeta("twitter:title"),
+        description: getMeta("og:description") || getMeta("twitter:description"),
+        thumbnail: getMeta("og:image") || getMeta("twitter:image"),
+      }
+    };
   } catch (e) {
     console.warn("❌ Nie udało się pobrać metadanych z linku:", url);
     return undefined;
