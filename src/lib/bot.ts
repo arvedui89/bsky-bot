@@ -39,7 +39,7 @@ export default class Bot {
     return this.#agent.login(loginOpts);
   }
 
-  async post({ text, images }: PostContent) {
+  async post({ text, images, external }: PostContent) {
     const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
 
