@@ -1,6 +1,6 @@
-import getPostsToPublish from "./getPostText.js";
-import Bot from "./bot.js";
-import { bskyAccount } from "./config.js";
+import getPostsToPublish from "./lib/getPostText.js";
+import Bot from "./lib/bot.js";
+import { bskyAccount } from "./lib/config.js";
 import fs from "fs/promises";
 import path from "path";
 
