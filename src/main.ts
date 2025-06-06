@@ -9,6 +9,8 @@ const LAST_TWEET_FILE = ".lastTweet";
 async function main() {
   const posts = await getPostsToPublish();
 
+  console.log("🔍 Debug postów:", JSON.stringify(posts, null, 2));
+
   if (posts.length === 0) {
     console.log("Brak nowych tweetów do opublikowania.");
     return;
