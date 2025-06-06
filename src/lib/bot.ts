@@ -22,7 +22,6 @@ interface PostContent {
   };
 }
 
-
 export default class Bot {
   #agent;
 
@@ -40,9 +39,12 @@ export default class Bot {
   }
 
   async post({ text, images, external }: PostContent) {
+    console.log("DEBUG record:", JSON.stringify(record, null, 2));
     const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
-
+    console.log("DEBUG external:", external);
+    console.log("DEBUG images:", images);
+    
   let embed: any = undefined;
 
   if (images && images.length > 0) {
