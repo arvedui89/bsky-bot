@@ -20,17 +20,17 @@ async function main() {
   await bot.login(bskyAccount);
 
   for (const post of posts) {
-    const { id, text, images } = post;
-    try {
-      const result = await bot.post({ text, images });
-      console.log(`✅ Opublikowano tweet ${id} na Bluesky.`);
+  const { id, text, images, external } = post; // dodaj external tutaj
+  try {
+    const result = await bot.post({ text, images, external }); // i przekaż dalej
+    console.log(`✅ Opublikowano tweet ${id} na Bluesky.`);
 
-      // Zapisz ID ostatniego opublikowanego tweeta
-      await fs.writeFile(path.resolve(LAST_TWEET_FILE), id, "utf8");
-    } catch (err) {
-      console.error(`❌ Błąd przy publikacji tweeta ${id}:`, err);
-    }
+    // Zapisz ID ostatniego opublikowanego tweeta
+    await fs.writeFile(path.resolve(LAST_TWEET_FILE), id, "utf8");
+  } catch (err) {
+    console.error(`❌ Błąd przy publikacji tweeta ${id}:`, err);
   }
+}
 }
 
 main().catch((err) => {
