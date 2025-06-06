@@ -38,13 +38,13 @@ export default class Bot {
     return this.#agent.login(loginOpts);
   }
 
-  async post({ text, images, external }: PostContent) {
+    async post({ text, images, external }: PostContent) {
     const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
 
     let embed: any = undefined;
 
-    if (images && images.length > 0) {
+    if (images?.length) {
       const uploaded = await Promise.all(
         images.map(async (url) => {
           const response = await fetch(url);
@@ -93,7 +93,7 @@ export default class Bot {
           uri: external.uri,
           title: external.title || "Tytuł testowy",
           description: external.description || "Opis testowy",
-          thumb: thumbnailBlob ?? undefined, // bez miniaturki jeśli nie działa
+          thumb: thumbnailBlob ?? undefined,
         },
       };
     }
