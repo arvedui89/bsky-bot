@@ -39,76 +39,75 @@ export default class Bot {
   }
 
   async post({ text, images, external }: PostContent) {
-        const richText = new RichText({ text });
+    const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
-    console.log("DEBUG record:", JSON.stringify(record, null, 2));
-    console.log("DEBUG external:", external);
-    console.log("DEBUG images:", images);
-    
-  let embed: any = undefined;
 
-  if (images && images.length > 0) {
-    const uploaded = await Promise.all(
-      images.map(async (url) => {
-        const response = await fetch(url);
-        const buffer = await response.arrayBuffer();
-        const type = response.headers.get("content-type") || "image/jpeg";
+    let embed: any = undefined;
 
-        const uploadResp = await this.#agent.uploadBlob(
-          new Uint8Array(buffer),
-          { encoding: type }
-        );
+    if (images && images.length > 0) {
+      const uploaded = await Promise.all(
+        images.map(async (url) => {
+          const response = await fetch(url);
+          const buffer = await response.arrayBuffer();
+          const type = response.headers.get("content-type") || "image/jpeg";
 
-      return {
-        image: uploadResp.data.blob,
-        alt: "Obrazek z tweeta",
-      };
-    })
-  );
+          const uploadResp = await this.#agent.uploadBlob(
+            new Uint8Array(buffer),
+            { encoding: type }
+          );
 
-  embed = {
-    $type: "app.bsky.embed.images",
-    images: uploaded,
-  };
-} else if (external) {
-  let thumbnailBlob = undefined;
-
-  if (external.thumbnail) {
-    try {
-      const response = await fetch(external.thumbnail);
-      const buffer = await response.arrayBuffer();
-      const type = response.headers.get("content-type") || "image/jpeg";
-
-      const uploadResp = await this.#agent.uploadBlob(
-        new Uint8Array(buffer),
-        { encoding: type }
+          return {
+            image: uploadResp.data.blob,
+            alt: "Obrazek z tweeta",
+          };
+        })
       );
 
-      thumbnailBlob = uploadResp.data.blob;
-    } catch (err) {
-      console.warn("⚠️ Nie udało się pobrać miniaturki:", external.thumbnail);
+      embed = {
+        $type: "app.bsky.embed.images",
+        images: uploaded,
+      };
+    } else if (external) {
+      let thumbnailBlob = undefined;
+
+      if (external.thumbnail) {
+        try {
+          const response = await fetch(external.thumbnail);
+          const buffer = await response.arrayBuffer();
+          const type = response.headers.get("content-type") || "image/jpeg";
+
+          const uploadResp = await this.#agent.uploadBlob(
+            new Uint8Array(buffer),
+            { encoding: type }
+          );
+
+          thumbnailBlob = uploadResp.data.blob;
+        } catch (err) {
+          console.warn("⚠️ Nie udało się pobrać miniaturki:", external.thumbnail);
+        }
+      }
+
+      embed = {
+        $type: "app.bsky.embed.external",
+        external: {
+          uri: external.uri,
+          title: external.title || "Tytuł testowy",
+          description: external.description || "Opis testowy",
+          thumb: thumbnailBlob ?? undefined, // bez miniaturki jeśli nie działa
+        },
+      };
     }
-  }
-
-embed = {
-  $type: "app.bsky.embed.external",
-  external: {
-    uri: external.uri,
-    title: external.title || "Tytuł testowy",
-    description: external.description || "Opis testowy",
-    thumb: thumbnailBlob ?? undefined, // bez miniaturki jeśli nie działa
-  },
-};
-
-}
 
     const record: Partial<AppBskyFeedPost.Record> = {
-  text: richText.text,
-  facets: richText.facets,
-  createdAt: new Date().toISOString(),
-  embed,
-};
+      text: richText.text,
+      facets: richText.facets,
+      createdAt: new Date().toISOString(),
+      embed,
+    };
 
+    console.log("DEBUG external:", external);
+    console.log("DEBUG images:", images);
+    console.log("DEBUG record:", JSON.stringify(record, null, 2));
 
     return this.#agent.post(record);
   }
@@ -126,7 +125,6 @@ embed = {
 
     const { text, images, external } = await getPostContent();
     const content = { text: text.trim(), images, external };
-
 
     if (!dryRun) {
       await bot.post(content);
