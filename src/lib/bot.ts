@@ -39,7 +39,21 @@ export default class Bot {
   }
 
     async post({ text, images, external }: PostContent) {
-    const richText = new RichText({ text });
+    let cleanText = text.trim();
+
+if (external?.uri) {
+  const uri = external.uri;
+  const escapedUri = uri.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedUri})`, "g");
+  const matches = [...cleanText.matchAll(regex)];
+
+  if (matches.length > 1) {
+    const indexToRemove = matches[1].index;
+    cleanText = cleanText.slice(0, indexToRemove).trimEnd() + cleanText.slice(indexToRemove + uri.length);
+  }
+}
+
+const richText = new RichText({ text: cleanText });
     await richText.detectFacets(this.#agent);
 
     let embed: any = undefined;
