@@ -39,9 +39,9 @@ export default class Bot {
   }
 
   async post({ text, images, external }: PostContent) {
-    console.log("DEBUG record:", JSON.stringify(record, null, 2));
-    const richText = new RichText({ text });
+        const richText = new RichText({ text });
     await richText.detectFacets(this.#agent);
+    console.log("DEBUG record:", JSON.stringify(record, null, 2));
     console.log("DEBUG external:", external);
     console.log("DEBUG images:", images);
     
