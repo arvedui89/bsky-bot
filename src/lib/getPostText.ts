@@ -132,11 +132,12 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
     if (lastValidUrl) {
       const linkRegex = new RegExp(lastValidUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
       const linkInOwnParagraph = finalText.split("\n").some(line => line.trim() === lastValidUrl);
-      }
+    }
+    
     if (!linkRegex.test(finalText) || !linkInOwnParagraph) {
         finalText += `\n\n${lastValidUrl}`;
-      }
-
+    }
+    
     let external;
     if (lastValidUrl && mediaUrls.length === 0) {
       const meta = await getExternalMetadataFromLink(lastValidUrl);
