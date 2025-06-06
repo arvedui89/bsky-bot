@@ -25,7 +25,6 @@ async function getExternalMetadataFromLink(url: string) {
     }
 
     return {
-      text: title || "ʟꜰᴄ Nowy artykuł",
       external: {
         uri: url,
         title,
@@ -134,27 +133,29 @@ export default async function getPostsToPublish(): Promise<Array<{ id: string; t
       const linkRegex = new RegExp(lastValidUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
       const linkInOwnParagraph = finalText.split("\n").some(line => line.trim() === lastValidUrl);
 
-    if (!linkRegex.test(finalText) || !linkInOwnParagraph) {
-      finalText += `\n\n${lastValidUrl}`;
-    }
+      if (!linkRegex.test(finalText) || !linkInOwnParagraph) {
+        finalText += `\n\n${lastValidUrl}`;
+      }
 
-    if (mediaUrls.length === 0) {
-      const meta = await getExternalMetadataFromLink(lastValidUrl);
-      if (meta) {
-        external = meta.external;
-        if (!finalText && meta.text) {
-        finalText = meta.text;
+      if (mediaUrls.length === 0) {
+        const meta = await getExternalMetadataFromLink(lastValidUrl);
+        if (meta) {
+          external = meta.external;
+
+          // Użyj tytułu tylko wtedy, gdy tweet był pusty
+          if (!finalText) {
+            finalText = external.title || "ʟꜰᴄ Nowy artykuł";
+          }
+        }
       }
     }
-  }
-}
 
-if (finalText === "" && mediaUrls.length === 0 && !external) {
-  console.log("❌ Pominięto: pusty tweet bez zdjęć i linków.");
-  continue;
-}
+    if (finalText === "" && mediaUrls.length === 0 && !external) {
+      console.log("❌ Pominięto: pusty tweet bez zdjęć i linków.");
+      continue;
+    }
 
-posts.push({ id, text: finalText, images: mediaUrls, external });
+    posts.push({ id, text: finalText, images: mediaUrls, external });
   }
 
   return posts.reverse();
