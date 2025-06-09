@@ -27,7 +27,7 @@ const normalize = (id: string | number | null | undefined): string =>
   for (const post of posts) {
     console.log("📤 Publikuję tweet:", { id: post.id, text: post.text });
 
-    await Bot.run(() => Promise.resolve({ text: post.text, images: post.images }), { dryRun: false });
+    await Bot.run(() => Promise.resolve({ text: post.text, images: post.images, external: post.external }), { dryRun: false });
 
     console.log(`[${new Date().toISOString()}] ✅ Opublikowano: "${post.text}"`);
   }
